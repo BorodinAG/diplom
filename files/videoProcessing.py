@@ -62,12 +62,12 @@ def image_processing(image):
     if cropped_image is None:
         return image
    
-    # Генерируем уникальное имя файла на основе текущего времени
-    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f'users/detected_plates/plate_{timestamp}.jpg'
+    # # Генерируем уникальное имя файла на основе текущего времени
+    # timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    # filename = f'users/detected_plates/plate_{timestamp}.jpg'
     
-    # Сохраняем изображение
-    cv2.imwrite(filename, cropped_image)
+    # # Сохраняем изображение
+    # cv2.imwrite(filename, cropped_image)
     
     return cropped_image
 
@@ -76,7 +76,7 @@ def number_processing(image):
     
     results = model(image)[0]
     auto_number = ''
-    
+
     try:
         # Получаем минимальный y2 и максимальный y1
         min_y2 = min(box.xyxy[0][3].item() for box in results.boxes if box.cls[0].item() <= 21)
@@ -87,11 +87,7 @@ def number_processing(image):
             sorted_boxes = sorted(results.boxes, key=lambda box: box.xyxy[0][0].item())
             get_val = lambda box: str(int(box.cls[0].item())) if box.cls[0].item() < 10 else results.names[int(box.cls[0])]
             auto_number = ''.join(map(get_val, [box for box in sorted_boxes if box.cls[0].item() <= 21]))            
-            
-            # Сохраняем номер в txt файл
-            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-            with open(f'users/detected_numbers/number_{timestamp}.txt', 'w') as f:
-                f.write(f"{auto_number} {min_y2} {max_y1}")                
+                
         else:
             # получаем среднее значение y координаты для всех объектов
             try:
@@ -124,6 +120,14 @@ def number_processing(image):
             # Иначе возвращаем букву из имени класса
             get_val = lambda x: str(int(x[4])) if x[4] < 10 else x[5]    
             auto_number = ''.join(map(get_val, upper)) + ''.join(map(get_val, lower))   
+
+        # Сохраняем номер в txt файл
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%Hh-%Mm")
+        data = datetime.datetime.now().strftime("%Y-%m-%d")
+        os.makedirs(fr'users/detected_numbers/{data}', exist_ok=True)                        
+        save_path = fr"users/detected_numbers/{data}/number_auto_{data}.txt"
+        with open(save_path, 'a') as f:
+            f.write(f"Auto number: {auto_number}, Data: {timestamp}, Coordinates: {min_y2} {max_y1}\n")    
     
     except:
         pass
